@@ -1,0 +1,84 @@
+---
+import SimpleCanvasTemplate from "../../../../common/SimpleCanvasTemplate.astro";
+---
+
+<SimpleCanvasTemplate title="first" className="js-canvas" />
+
+<script>
+  import vs from './vs.glsl?raw';
+  import fs from './fs.glsl?raw';
+  import { GlUtils } from './GlUtils'
+  import { mat4 } from 'gl-matrix';
+  import {filmer} from '../../../../common/filmer'
+  import Camera from './camera'
+
+  const canvas = document.querySelector<HTMLCanvasElement>(".js-canvas")!;
+  const gl = canvas.getContext('webgl', {preserveDrawingBuffer: true})!;
+
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+  const glUtils = new GlUtils(gl);
+  const vertShader = glUtils.createShader(vs, gl.VERTEX_SHADER);
+  const fragShader = glUtils.createShader(fs, gl.FRAGMENT_SHADER);
+  const program = glUtils.createProgram(vertShader, fragShader);
+  gl.useProgram(program);
+
+  const position = [
+    0.0, 1, 0.0,
+    1, 0, 0.0,
+    -1, 0, 0.0
+  ];
+  glUtils.setAttribute(program, 'position', new Float32Array(position), 3);
+
+  const color = [
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1, 0.0, 1.0,
+    0.0, 0.0, 1, 1.0
+  ];
+  glUtils.setAttribute(program, 'color', new Float32Array(color), 4);
+
+  const camera = new Camera(gl);
+  camera.lookAt(0, 0, 0);
+  camera.setPosition(0, 0, 5);
+  camera.setPerspective(45, canvas.width/canvas.height, 0.1, 100);
+  camera.updateMatrix();
+
+  const mvpUniformLocation = gl.getUniformLocation(program, 'mvpMatrix');
+  const vpMatrix = camera.getMatrix();
+
+  const render = ({time}) => {
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    const mvpMatrix = mat4.create();
+    const rad = (time) % (2 * Math.PI);
+
+    const model1Matrix = mat4.identity(mat4.create());
+    mat4.translate(model1Matrix, model1Matrix, [0, 0, -5]);
+    mat4.rotate(model1Matrix, model1Matrix, rad, [0, 1, 0]);
+    mat4.multiply(mat4.identity(mvpMatrix), vpMatrix, model1Matrix);
+    gl.uniformMatrix4fv(mvpUniformLocation, false, mvpMatrix);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    const x = Math.cos(rad);
+    const y = Math.sin(rad);
+    const model2Matrix = mat4.identity(mat4.create());
+    mat4.translate(model2Matrix, model2Matrix, [x, y+1, 0]);
+    mat4.multiply(mat4.identity(mvpMatrix), vpMatrix, model2Matrix);
+    gl.uniformMatrix4fv(mvpUniformLocation, false, mvpMatrix);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+
+    const scale = Math.sin(rad)/2 + 1;
+    const model3Matrix = mat4.identity(mat4.create());
+    mat4.translate(model3Matrix, model3Matrix, [-1.0, -1.0, 0.0]);
+    mat4.scale(model3Matrix, model3Matrix, [scale, scale, 0]);
+    mat4.multiply(mat4.identity(mvpMatrix), vpMatrix, model3Matrix);
+    gl.uniformMatrix4fv(mvpUniformLocation, false, mvpMatrix);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+
+  filmer.add({id: 'animation', update: render})
+  filmer.start()
+
+</script>

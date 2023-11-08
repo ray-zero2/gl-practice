@@ -1,0 +1,15 @@
+---
+
+const { className, width = 500, height = 300, isRetina } = Astro.props;
+---
+
+<canvas class={`canvas ${className}`}  width={width} height={height} style=`--width: ${width}; --height: ${height}`/>
+
+<style lang="scss">
+  .canvas {
+    width: var(--width);
+    height: var(--height);
+    display: block;
+    margin: auto;
+  }
+</style>

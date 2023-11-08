@@ -1,0 +1,25 @@
+---
+import Layout from "../layouts/Layout.astro";
+import FullCanvas from "./FullCanvas.astro";
+const {width = 500, height = 300, title, className} = Astro.props;
+---
+
+<Layout title={title}>
+  <div class="root">
+    <FullCanvas width={width} height={height} className={className} />
+  </div>
+</Layout>
+
+<style lang="scss">
+  .root {
+    display: grid;
+    width: 100vw;
+    height: 100vh;
+    place-items: center;
+    background-color: #808080;
+  }
+
+  .root canvas {
+    background-color: #000;
+  }
+</style>

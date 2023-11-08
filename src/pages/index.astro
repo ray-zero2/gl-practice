@@ -1,0 +1,24 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+
+const pages = await Astro.glob('./works/**/*.astro');
+const pageData = pages.map(page => {
+	return {
+		url: page.url,
+		title: page.file.split('/').at(-2).replace('.astro', '')
+	}
+})
+---
+
+<Layout title="index">
+	<main>
+		<ul>
+			{
+				pageData.map(data => (
+					<li><a href={data.url}>{data.title}</a></li>
+				))
+			}
+		</ul>
+	</main>
+</Layout>

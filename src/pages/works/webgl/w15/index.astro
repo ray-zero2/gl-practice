@@ -1,0 +1,65 @@
+---
+import SimpleCanvasTemplate from "../../../../common/SimpleCanvasTemplate.astro";
+---
+
+<SimpleCanvasTemplate title="first" className="js-canvas" width={300} heigh={300} />
+
+<script>
+  import vs from './vs.glsl?raw';
+  import fs from './fs.glsl?raw';
+  import { GlUtils } from './GlUtils'
+  import Camera from './Camera';
+  import { mat4 } from 'gl-matrix';
+
+  const canvas = document.querySelector<HTMLCanvasElement>(".js-canvas")!;
+  const gl = canvas.getContext('webgl')!;
+
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  const glUtils = new GlUtils(gl);
+  const vertexShader = glUtils.createShader(vs, gl.VERTEX_SHADER);
+  const fragmentShader = glUtils.createShader(fs, gl.FRAGMENT_SHADER);
+  const program = glUtils.createProgram(vertexShader, fragmentShader);
+  gl.useProgram(program);
+
+  const position = [
+    0.0, 1, 0.0,
+    1, 0, 0.0,
+    -1, 0, 0.0
+  ];
+  glUtils.setAttribute(program, 'position', new Float32Array(position), 3)
+
+  const color = [
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0
+  ];
+  glUtils.setAttribute(program, 'color', new Float32Array(color), 4)
+
+  const camera = new Camera(gl);
+  camera.setPosition(0, 0, 3);
+  camera.lookAt(0, 0, 0);
+  camera.setPerspective(90, canvas.width / canvas.height, 0.1, 100);
+  camera.updateMatrix();
+
+  const vp = camera.getMatrix();
+  const m1 = mat4.identity(mat4.create());
+  mat4.translate(m1, m1, [-1.5, 0, 0]);
+
+  const m2 = mat4.identity(mat4.create());
+  mat4.translate(m2, m2, [1.5, 0, 0]);
+
+  const mvp = mat4.create();
+
+  const uniformLocation = gl.getUniformLocation(program, 'mvpMatrix');
+
+  mat4.identity(mvp);
+  mat4.multiply(mvp, vp, m1);
+  gl.uniformMatrix4fv(uniformLocation, false, mvp);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  mat4.identity(mvp);
+  mat4.multiply(mvp, vp, m2);
+  gl.uniformMatrix4fv(uniformLocation, false, mvp);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+</script>
