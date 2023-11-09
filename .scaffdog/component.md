@@ -46,6 +46,12 @@ import SimpleCanvasTemplate from "../../../../common/SimpleCanvasTemplate.astro"
 
   const canvas = document.querySelector<HTMLCanvasElement>(".js-canvas")!;
   const gl = canvas.getContext('webgl')!;
+
+
+  const animate = ({time}) => {}
+
+  filmer.add({id: 'animation', update: animate});
+  filmer.start();
 </script>
 ```
 
@@ -125,14 +131,30 @@ export class GlUtils {
     this.gl.deleteProgram(program);
   }
 
-  setAttribute(program, name, data, size) {
+  setAttribute(program, name, data, size, { type, usage } = { type: this.gl.FLOAT, usage: this.gl.STATIC_DRAW }) {
     const location = this.gl.getAttribLocation(program, name);
+    const vbo = this.createVBO(data, usage);
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vbo);
+    this.gl.enableVertexAttribArray(location);
+    this.gl.vertexAttribPointer(location, size, type, false, 0, 0);
+  }
+
+  createVBO(data, usage = this.gl.STATIC_DRAW) {
     const buffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, data, this.gl.STATIC_DRAW);
-    this.gl.enableVertexAttribArray(location);
-    this.gl.vertexAttribPointer(location, size, this.gl.FLOAT, false, 0, 0);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(data), usage);
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+    return buffer;
+  };
+
+  createIBO(data, usage = this.gl.STATIC_DRAW) {
+    const buffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buffer);
+    this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Int16Array(data), usage);
+    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
+    return buffer;
   }
 }
+
 
 ```

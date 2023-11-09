@@ -1,0 +1,97 @@
+---
+import SimpleCanvasTemplate from "../../../../common/SimpleCanvasTemplate.astro";
+---
+
+<SimpleCanvasTemplate title="first" className="js-canvas" />
+
+<script>
+  import vs from './vs.glsl?raw';
+  import fs from './fs.glsl?raw';
+  import { GlUtils } from './GlUtils'
+  import { mat4 } from 'gl-matrix';
+  import { filmer } from '../../../../common/filmer'
+  import Camera from './camera'
+
+  const canvas = document.querySelector<HTMLCanvasElement>(".js-canvas")!;
+  const gl = canvas.getContext('webgl')!;
+  const glUtils = new GlUtils(gl);
+
+  const vertex = glUtils.createShader(vs, gl.VERTEX_SHADER);
+  const fragment = glUtils.createShader(fs, gl.FRAGMENT_SHADER);
+  const program = glUtils.createProgram(vertex, fragment);
+  gl.useProgram(program);
+
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  gl.clearDepth(1.0);
+
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthFunc(gl.LEQUAL);
+
+  gl.enable(gl.CULL_FACE);
+
+  const camera = new Camera(gl);
+  camera.lookAt(0, 0, 0);
+  camera.setPosition(0, 0, 5);
+  camera.setPerspective(45, canvas.width / canvas.height, 0.1, 100);
+  camera.updateMatrix();
+  const vpMatrix = camera.getMatrix()
+
+  const position = [
+    -0.5, 0.5, 0.0,
+    -0.5, -0.5, 0.0,
+    0.5, 0.5, 0.0,
+    0.5, -0.5, 0.0
+  ];
+  const color = [
+    1.0, 0.0, 0.0, 1.0, // v0
+    0.0, 1.0, 0.0, 1.0, // v1
+    0.0, 0.0, 1.0, 1.0, // v2
+    1.0, 1.0, 0.0, 1.0  // v3
+  ];
+  const index = [
+    0, 1, 2,
+    1, 2, 3
+  ];
+
+  glUtils.setAttribute(program, 'position', position, 3);
+  glUtils.setAttribute(program, 'color', color, 4);
+
+  const ibo = glUtils.createIBO(index);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+
+  const mvpUniLocation = gl.getUniformLocation(program, 'mvpMatrix');
+
+  const m1Matrix = mat4.create();
+  const m2Matrix = mat4.create();
+  const mvpMatrix = mat4.create();
+
+  const calcPosition = (time) => {
+    const rad = time * 100 * Math.PI / 180;
+    const x = Math.cos(rad);
+    const z = Math.sin(rad);
+    return [x, 0, z];
+  }
+
+  const animate = ({time}) => {
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    mat4.identity(mvpMatrix);
+    mat4.identity(m1Matrix);
+    mat4.translate(m1Matrix, m1Matrix, [...calcPosition(time)]);
+    mat4.rotate(m1Matrix, m1Matrix, time * 40 * Math.PI / 180, [0, 1, 0]);
+    mat4.multiply(mvpMatrix, vpMatrix, m1Matrix);
+    gl.uniformMatrix4fv(mvpUniLocation, false, mvpMatrix);
+    gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_SHORT, 0);
+
+    mat4.identity(mvpMatrix);
+    mat4.identity(m2Matrix);
+    mat4.translate(m2Matrix, m2Matrix, [...calcPosition(time/2)]);
+    mat4.rotate(m2Matrix, m2Matrix, time * 80 * Math.PI / 180, [0, 1, 0]);
+    mat4.multiply(mvpMatrix, vpMatrix, m2Matrix);
+    gl.uniformMatrix4fv(mvpUniLocation, false, mvpMatrix);
+    gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_SHORT, 0);
+  }
+
+  filmer.add({id: 'animation', update: animate});
+  filmer.start();
+</script>

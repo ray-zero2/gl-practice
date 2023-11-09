@@ -1,0 +1,78 @@
+---
+import SimpleCanvasTemplate from "../../../../common/SimpleCanvasTemplate.astro";
+---
+
+<SimpleCanvasTemplate title="first" className="js-canvas" />
+
+<script>
+  import vs from './vs.glsl?raw';
+  import fs from './fs.glsl?raw';
+  import { GlUtils } from './GlUtils'
+  import { mat4 } from 'gl-matrix';
+  import { filmer } from '../../../../common/filmer'
+  import Camera from './camera'
+
+  const canvas = document.querySelector<HTMLCanvasElement>(".js-canvas")!;
+  const gl = canvas.getContext('webgl', {preserveDrawingBuffer: true})!;
+
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  gl.clearDepth(1.0);
+  const glUtils = new GlUtils(gl);
+
+  const vertex = glUtils.createShader(vs, gl.VERTEX_SHADER);
+  const fragment = glUtils.createShader(fs, gl.FRAGMENT_SHADER);
+  const program = glUtils.createProgram(vertex, fragment);
+  gl.useProgram(program);
+
+  const position =  [
+    0.0,  1.0,  0.0,
+    1.0,  0.0,  0.0,
+   -1.0,  0.0,  0.0,
+    0.0, -1.0,  0.0
+];
+  const color = [
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    1.0, 1.0, 1.0, 1.0
+  ];
+
+  const index = [
+    0, 1, 2,
+    1,2,3
+  ];
+
+ glUtils.setAttribute(program, 'position', position, 3);
+ glUtils.setAttribute(program, 'color', color, 4);
+
+ const ibo = glUtils.createIBO(index)
+ gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+
+ const camera = new Camera(gl);
+ camera.lookAt(0, 0, 0);
+ camera.setPosition(0, 0, 5);
+ camera.setPerspective(45, canvas.width / canvas.height, 0.1, 100);
+ camera.updateMatrix();
+ const vpMatrix = camera.getMatrix();
+ const modelMatrix = mat4.create();
+ const mvpMatrix = mat4.create();
+
+ const mvpLocation = gl.getUniformLocation(program, 'mvpMatrix');
+
+ const animation = ({time}) => {
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    const rad = time * 100 * Math.PI / 180;
+    mat4.identity(modelMatrix);
+    mat4.rotate(modelMatrix, modelMatrix, rad, [0, 1, 0]);
+    mat4.identity(mvpMatrix);
+    mat4.multiply(mvpMatrix, vpMatrix, modelMatrix);
+
+    gl.uniformMatrix4fv(mvpLocation, false, mvpMatrix);
+
+    gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_SHORT, 0)
+ }
+
+ filmer.add({id: 'first', update: animation});
+ filmer.start();
+</script>
