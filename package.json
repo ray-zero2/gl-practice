@@ -10,6 +10,8 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@tweakpane/core": "^2.0.1",
+    "@tweakpane/plugin-essentials": "^0.2.0",
     "astro": "^3.4.3",
     "gl-matrix": "^3.4.3",
     "sass": "^1.69.5",
@@ -17,7 +19,6 @@
     "vite-plugin-glsl": "^1.1.2"
   },
   "devDependencies": {
-    "@tweakpane/core": "^2.0.1",
     "scaffdog": "^3.0.0"
   }
 }

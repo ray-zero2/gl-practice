@@ -3,6 +3,7 @@ import glsl from 'vite-plugin-glsl';
 
 // https://astro.build/config
 export default defineConfig({
-  plugins: [glsl()],
-
+  vite: {
+    plugins: [glsl()],
+  }
 });

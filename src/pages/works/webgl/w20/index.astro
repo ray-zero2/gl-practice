@@ -1,0 +1,68 @@
+---
+import SimpleCanvasTemplate from "../../../../common/SimpleCanvasTemplate.astro";
+---
+
+<SimpleCanvasTemplate title="first" className="js-canvas" />
+
+<script >
+  import vs from './vs.glsl';
+  import fs from './fs.glsl';
+  import { GlUtils } from './GlUtils';
+  import pane  from './pane';
+  import { mat4 } from 'gl-matrix';
+  import { filmer } from '../../../../common/filmer'
+  import Camera from './camera'
+  import Torus from './Torus';
+
+  const canvas = document.querySelector<HTMLCanvasElement>(".js-canvas")!;
+  const gl = canvas.getContext('webgl')!;
+
+  const glUtils = new GlUtils(gl);
+
+  const vertex = glUtils.createShader(vs, gl.VERTEX_SHADER);
+  const fragment = glUtils.createShader(fs, gl.FRAGMENT_SHADER);
+  const program = glUtils.createProgram(vertex, fragment);
+  gl.useProgram(program);
+
+  const torus = new Torus(1, 0.4, 12, 180);
+  glUtils.setAttribute(program, 'position', torus.vertices, 3);
+  glUtils.setAttribute(program, 'uv', torus.uv, 2);
+
+  const ibo = glUtils.createIBO(torus.indices);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+
+  const camera = new Camera(gl);
+  camera.setPosition(0, 0, 5);
+  camera.lookAt(0, 0, 0);
+  camera.setPerspective(45, canvas.width / canvas.height, 0.1, 100);
+  camera.updateMatrix();
+  const vpMatrx = camera.getMatrix();
+
+  const mMatrix = mat4.create();
+  const mvpMatrix = mat4.create();
+
+  const matrixUniformLocation = gl.getUniformLocation(program, 'mvpMatrix');
+
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  gl.clearDepth(1.0);
+  gl.depthFunc(gl.LEQUAL);
+  gl.enable(gl.DEPTH_TEST);
+
+  const animate = ({time}) => {
+//
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    mat4.identity(mMatrix);
+    mat4.identity(mvpMatrix);
+    const rad = (time * 50) * Math.PI / 180;
+    mat4.rotate(mMatrix, mMatrix, rad, [0, 1, 1]);
+    mat4.multiply(mvpMatrix, vpMatrx, mMatrix);
+
+    gl.uniformMatrix4fv(matrixUniformLocation, false, mvpMatrix);
+    gl.drawElements(gl.TRIANGLES, torus.indices.length, gl.UNSIGNED_SHORT, 0);
+
+  }
+
+  filmer.add({id: 'animation', update: animate, order: 1});
+  filmer.start();
+</script>
