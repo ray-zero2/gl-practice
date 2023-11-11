@@ -1,20 +1,23 @@
 ---
 import SimpleCanvasTemplate from "../../../../common/SimpleCanvasTemplate.astro";
 ---
-
-<SimpleCanvasTemplate title="first" className="js-canvas" />
-
+<>
+  <SimpleCanvasTemplate title="first" className="js-canvas" />
+</>
 <script>
   import vs from './vs.glsl?raw';
   import fs from './fs.glsl?raw';
   import { GlUtils } from './GlUtils'
   import { mat4 } from 'gl-matrix';
+  import { Pane } from 'tweakpane';
   import { filmer } from '../../../../common/filmer'
   import Camera from './camera'
 
   const canvas = document.querySelector<HTMLCanvasElement>(".js-canvas")!;
+
   const gl = canvas.getContext('webgl')!;
   const glUtils = new GlUtils(gl);
+  const pane = new Pane();
 
   const vertex = glUtils.createShader(vs, gl.VERTEX_SHADER);
   const fragment = glUtils.createShader(fs, gl.FRAGMENT_SHADER);
@@ -23,11 +26,32 @@ import SimpleCanvasTemplate from "../../../../common/SimpleCanvasTemplate.astro"
 
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clearDepth(1.0);
-
-  gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
 
-  gl.enable(gl.CULL_FACE);
+  const params = {
+    "depthTest": true,
+    "culling": false,
+  }
+  params.depthTest && gl.enable(gl.DEPTH_TEST);
+  params.culling && gl.enable(gl.CULL_FACE);
+  pane
+    .addBinding(params, 'depthTest', {label: 'depth test'})
+    .on('change', (e) => {
+      if (e.value) {
+        gl.enable(gl.DEPTH_TEST);
+      } else {
+        gl.disable(gl.DEPTH_TEST);
+      }
+    });
+  pane
+    .addBinding(params, 'culling')
+    .on('change', (e) => {
+      if (e.value) {
+        gl.enable(gl.CULL_FACE);
+      } else {
+        gl.disable(gl.CULL_FACE);
+      }
+    });
 
   const camera = new Camera(gl);
   camera.lookAt(0, 0, 0);

@@ -29,7 +29,7 @@ void main(){
 
 # `{{inputs.value}}/index.astro`
 
-```
+```astro
 ---
 import SimpleCanvasTemplate from "../../../../common/SimpleCanvasTemplate.astro";
 ---
@@ -39,14 +39,15 @@ import SimpleCanvasTemplate from "../../../../common/SimpleCanvasTemplate.astro"
 <script>
   import vs from './vs.glsl?raw';
   import fs from './fs.glsl?raw';
-  import { GlUtils } from './GlUtils'
+  import { GlUtils } from './GlUtils';
+  import { Pane } from 'tweakpane';
   import { mat4 } from 'gl-matrix';
   import { filmer } from '../../../../common/filmer'
   import Camera from './camera'
 
   const canvas = document.querySelector<HTMLCanvasElement>(".js-canvas")!;
   const gl = canvas.getContext('webgl')!;
-
+  const pane = new Pane();
 
   const animate = ({time}) => {}
 
